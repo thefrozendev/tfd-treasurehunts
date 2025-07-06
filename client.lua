@@ -29,7 +29,7 @@ Citizen.CreateThread(function()
             SetBlipSprite(Shared.Blips[i], Config.Blips.Sprite or `blip_mp_game_treasure_hunt`)
             SetBlipScale(Shared.Blips[i], Config.Blips.Scale or 0.2)
             SetBlipName(Shared.Blips[i], Config.Blips.Name or "Treasure Map Vendor")
-            SetBlipModifier(Shared.Blips[i], Config.Blips.Color or `BLIP_MODIFIED_MP_COLOR_32)
+            SetBlipModifier(Shared.Blips[i], Config.Blips.Color or `BLIP_MODIFIED_MP_COLOR_32`)
         end
     end
 end)

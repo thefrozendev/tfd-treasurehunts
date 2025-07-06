@@ -21,7 +21,7 @@ Config = {
     MapVendors = {
         {
             Name = "Treasure Map Vendor",
-            Coords = vector4(0, 0, 0, 0),
+            Coords = vector4(2861.760, -1194.387, 48.989, 144.505),
             PedModel = `s_m_m_blwdealer_01`,
             Stock = {
                 {
@@ -38,7 +38,7 @@ Config = {
         },
         {
             Name = "Treasure Map Vendor",
-            Coords = vector4(0, 0, 0, 0),
+            Coords = vector4(-756.495, -1355.898, 43.575, 268.836),
             PedModel = `s_m_m_blwdealer_01`,
             Stock = {
                 {

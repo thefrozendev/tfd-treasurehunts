@@ -1,4 +1,4 @@
-local Utils = {}
+Utils = {}
 
 function Utils.PrintDebug(message)
     if Config.Debug then

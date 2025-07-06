@@ -21,10 +21,10 @@ local function onEnterVendor(point)
 
     point.entity = CreatePed(
         model,
-        point.Coords.x,
-        point.Coords.y,
-        point.Coords.z,
-        point.Coords.w,
+        point.vendor.Coords.x,
+        point.vendor.Coords.y,
+        point.vendor.Coords.z - 1.0,
+        point.vendor.Coords.w,
         false,
         true
     )
