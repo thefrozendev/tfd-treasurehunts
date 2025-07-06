@@ -12,7 +12,7 @@ require "client.hunt"
 require "client.notifications"
 
 Citizen.CreateThread(function()
-    repeat Wait(2000) until LocalPlayer.state.IsInSession -- VORP Only, fix this!
+    Shared.Framework.WaitUntilLoaded()
 
     SetupPrompts()
 
