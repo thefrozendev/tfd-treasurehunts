@@ -26,7 +26,7 @@ end
 
 function ShowPrompt(group, action)
     local prompt = prompts[group]
-    if prompt and prompt[action] then
+    if prompt then
         local label = VarString(10, "LITERAL_STRING", prompt.label)
         UiPromptSetActiveGroupThisFrame(prompt.group, label, 0, 0, 0, 0)
 

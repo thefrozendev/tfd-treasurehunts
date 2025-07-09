@@ -6,5 +6,8 @@ Shared = {
 
 require "modules.utils.shared"
 require "modules.bridge.server"
+require "server.callbacks"
+require "server.items"
 
 math.randomseed(os.time())
+RegisterItems()

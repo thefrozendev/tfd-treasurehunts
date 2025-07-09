@@ -14,7 +14,7 @@ local function openMenu(menu, firstPage)
 end
 
 function OpenVendorMenu(vendorIdx)
-    local vendor = Config.Vendors[vendorIdx]
+    local vendor = Config.MapVendors[vendorIdx]
     if not vendor then
         print("Vendor not found: " .. vendorIdx)
         return
@@ -67,7 +67,7 @@ function OpenVendorMenu(vendorIdx)
 
     for i=1, #vendor.Stock do
         firstPage:RegisterElement("button", {
-            label = "Buy " .. vendor.Stock[i].Label .. " - $" .. Utils.FormatMoney(vendor.Stock[i].Price),
+            label = "Buy " .. vendor.Stock[i].Label .. " - " .. Utils.FormatMoney(vendor.Stock[i].Price),
             slot = "content",
             sound = {
                 action = "SELECT",
@@ -79,9 +79,15 @@ function OpenVendorMenu(vendorIdx)
             local input = lib.inputDialog("How many maps would you like to buy?", {
                 { type = "number", label = "Quantity", required = true, min = 1, max = 10 }
             })
-            lib.callback.await("tfd-treasurehunts:Server:BuyMap", 200, vendorIdx, i, input[1])
-
-            openMenu(menus["vendor"], firstPage)
+            local ok, msg = lib.callback.await("tfd-treasurehunts:Server:BuyMap", 200, vendorIdx, i, input[1])
+            if not ok then
+                if msg == "low_money" then
+                    ShowSimpleRightText("You don't have enough money to buy this map.", 5000)
+                else
+                    ShowSimpleRightText("An error occurred while trying to buy the map.", 5000)
+                end
+                return
+            end
         end)
     end
 

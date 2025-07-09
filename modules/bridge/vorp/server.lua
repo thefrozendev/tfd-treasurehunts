@@ -20,12 +20,18 @@ function Shared.Framework.GetMoney(playerId)
     return getCharacter(playerId).money
 end
 
+-- I dislike VORP's limit vs stack system...
+function Shared.Framework.CanHoldItem(playerId, itemName, amount)
+    return exports.vorp_inventory:canCarryItem(playerId, itemName, amount)
+end
+
 function Shared.Framework.AddItem(playerId, itemName, amount, _)
+    Utils.PrintDebug("Adding item: " .. itemName .. " x" .. amount .. " to player " .. playerId)
     exports.vorp_inventory:addItem(playerId, itemName, amount)
 end
 
 function Shared.Framework.RemoveItem(playerId, itemName, amount, _)
-    exports.vorp_inventory:removeItem(playerId, itemName, amount)
+    exports.vorp_inventory:subItem(playerId, itemName, amount)
 end
 
 function Shared.Framework.GetItem(playerId, itemName)
@@ -33,7 +39,7 @@ function Shared.Framework.GetItem(playerId, itemName)
 end
 
 function Shared.Framework.GetItemCount(playerId, itemName)
-    return Shared.Framework.GetItem(playerId, itemName).count or 0
+    return Shared.Framework.GetItem(playerId, itemName)?.count or 0
 end
 
 function Shared.Framework.GetItemLabel(itemName)
@@ -41,7 +47,7 @@ function Shared.Framework.GetItemLabel(itemName)
 
     local item = exports.vorp_inventory:getItemDB(itemName)
     if not item then
-        print("Item not found: " .. itemName)
+        warn("Item not found in database: " .. itemName)
         return "Unknown"
     end
 
@@ -52,6 +58,7 @@ end
 function Shared.Framework.RegisterUsableItem(itemName, f)
     Utils.PrintDebug("Registering usable item: " .. itemName)
     exports.vorp_inventory:registerUsableItem(itemName, function(data)
+        exports.vorp_inventory:closeInventory(data.source)
         pcall(f, data.source, data.item.name)
     end, "tfd-treasurehunts")
     registeredItems[itemName] = true

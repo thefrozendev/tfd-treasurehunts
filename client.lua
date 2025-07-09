@@ -5,6 +5,7 @@ Shared = {
 }
 
 require "modules.utils.shared"
+require "modules.bridge.client"
 require "client.prompts"
 require "client.vendors"
 require "client.menu"

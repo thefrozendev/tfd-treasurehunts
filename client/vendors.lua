@@ -72,7 +72,7 @@ function RegisterVendor(key, vendor)
     points["shop_" .. key] = lib.points.new({
         name = "treasurehunt_shop_" .. key,
         coords = vendor.Coords,
-        vendor = vendor,
+        vendor = key,
         vendorPoint = points[key],
         distance = 2.0,
         nearby = nearbyVendor,
@@ -95,3 +95,9 @@ function WipePeds()
         points[key] = nil
     end
 end
+
+AddEventHandler("onResourceStop", function(resourceName)
+    if resourceName == GetCurrentResourceName() then
+        WipePeds()
+    end
+end)

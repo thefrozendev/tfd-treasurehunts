@@ -1,4 +1,5 @@
 local function useMap(source, item)
+    Utils.PrintDebug("Player " .. source .. " is using map: " .. json.encode(item))
     if not Config.Maps[item] then
         Utils.PrintDebug("Attempted to use an unconfigured map: " .. item)
         return
@@ -20,14 +21,19 @@ local function useMap(source, item)
 
     local digIndex = math.random(1, #map.DigLocations)
 
-    TriggerClientEvent("tfd-treasurehunts:Client:StartHunt", source, {
-        digLocation = map.DigLocations[digIndex]
-    })
+    TriggerClientEvent("tfd-treasurehunts:Client:StartHunt", source, item, digIndex)
+
+    local digLocation = vector4(
+        map.DigLocations[digIndex].Coords.x,
+        map.DigLocations[digIndex].Coords.y,
+        map.DigLocations[digIndex].Coords.z,
+        math.random(0, 360) -- Random rotation
+    )
 
     Shared.PlayerDigs[source] = {
         map = map,
         digIndex = digIndex,
-        digLocation = map.DigLocations[digIndex]
+        digLocation = digLocation
     }
 
     Shared.Framework.RemoveItem(source, item, 1)
@@ -37,8 +43,8 @@ local function getRandomLootFromTable(lootTable, count)
     local rewards = {}
 
     local totalProb = 0
-    for _, item in pairs(lootTable) do
-        totalProb = totalProb + item.Probability
+    for i=1, #lootTable do
+        totalProb = totalProb + lootTable[i].probability
     end
 
     for i=1, count do
@@ -46,8 +52,13 @@ local function getRandomLootFromTable(lootTable, count)
         local cumulative = 0
 
         for _, item in ipairs(lootTable) do
-            cumulative = cumulative + (item.probably / totalProb)
+            cumulative = cumulative + (item.probability / totalProb)
             if roll <= cumulative then
+                if not item.amount then
+                    local minAmount = item.minAmount or 1
+                    local maxAmount = item.maxAmount or 1
+                    item.amount = math.random(minAmount, maxAmount)
+                end
                 table.insert(rewards, {
                     item = item.item,
                     amount = item.amount or 1
@@ -57,12 +68,26 @@ local function getRandomLootFromTable(lootTable, count)
         end
     end
 
-    return rewards
+    local consolidatedRewards = {}
+    for i=1, #rewards do
+        local item = rewards[i].item
+        local amount = rewards[i].amount
+
+        if not consolidatedRewards[item] then
+            consolidatedRewards[item] = 0
+        end
+
+        consolidatedRewards[item] = consolidatedRewards[item] + amount
+    end
+    Utils.PrintDebug("Consolidated rewards: " .. json.encode(consolidatedRewards))
+
+    return consolidatedRewards
 end
 
 local function useChest(source, item)
+    Utils.PrintDebug("Player " .. source .. " is using chest: " .. json.encode(item))
     if not Config.Dig.Chests[item] then
-        Utils.PrintDebug("Attempted to use an unconfigured chest: " .. item)
+        warn("Attempted to use an unconfigured chest: " .. item)
         return
     end
 
@@ -75,36 +100,47 @@ local function useChest(source, item)
     end
 
     local rewards = getRandomLootFromTable(chest.LootTable, chest.Amount or 1)
-
-    local label
-    for _, reward in ipairs(rewards) do
-        if label ~= nil then
-            label = label .. ", "
+    -- Because VORP breaks all of the gaming norms of stacks... let's loop through rewards
+    -- and make sure we won't exceed the "limit" of an item
+    for key, amount in pairs(rewards) do
+        local frameworkItem = Shared.Framework.GetItem(source, key)
+        if not frameworkItem then
+            warn("Item not found: " .. key)
+            TriggerClientEvent("tfd-treasurehunts:Client:NotifyRight", source, "You do not have the item: " .. key, 5000)
+            return
         end
-        label = label .. reward.amount .. "x " .. Shared.Framework.GetItemLabel(reward.item)
-        Shared.Framework.AddItem(source, reward.item, reward.amount)
+        if not Shared.Framework.CanHoldItem(source, key, amount) then
+            Utils.PrintDebug("Player " .. source .. " cannot receive " .. amount .. "x " .. key .. ", they would exceed the limit.")
+            TriggerClientEvent("tfd-treasurehunts:Client:NotifyRight", source, "Your pockets are too full, you would disgard items if you do this.", 7500)
+            TriggerClientEvent("tfd-treasurehunts:Client:NotifyRight", source, "Instead, you close the treasure chest and place it back.", 7500)
+            return
+        end
+    end
+
+    local label = ""
+    for key, amount in pairs(rewards) do
+        if label ~= "" then label = label .. ", " end
+        if key == "money" then
+            Shared.Framework.AddMoney(source, amount, "from treasure chest")
+            label = label .. Utils.FormatMoney(amount)
+        else
+            label = label .. amount .. "x " .. Shared.Framework.GetItemLabel(key)
+            Shared.Framework.AddItem(source, key, amount, "from treasure chest")
+        end
     end
 
     TriggerClientEvent("tfd-treasurehunts:Client:NotifyRight", source, "You found: " .. label, 5000)
-
     Shared.Framework.RemoveItem(source, item, 1)
-    for i=1, #rewards do
-        if rewards[i].item == "money" then
-            Shared.Framework.AddMoney(source, rewards[i].amount)
-        else
-            Shared.Framework.AddItem(source, rewards[i].item, rewards[i].amount, "from treasure hunting")
-        end
-    end
 end
 
 function RegisterItems()
     -- Register maps
-    for _, item in pairs(Config.Maps) do
-        Shared.Framework.RegisterUsableItem(item.Name, useMap)
+    for key, _ in pairs(Config.Maps) do
+        Shared.Framework.RegisterUsableItem(key, useMap)
     end
 
     -- Register treasure chests
-    for _, item in pairs(Config.Dig.Chests) do
-        Shared.Framework.RegisterUsableItem(item.Name, useChest)
+    for key, _ in pairs(Config.Dig.Chests) do
+        Shared.Framework.RegisterUsableItem(key, useChest)
     end
 end
